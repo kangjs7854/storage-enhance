@@ -1,2 +1,3 @@
 # storage-enhance
-webStorage enhance. support Symbol
+
+存储到webstorage时，支持Symbol等数据结构
