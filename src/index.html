@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const SYMOBOL_PRFIX = "SYMOBOL_PRFIX";
+
+      const INIFINITY = "Infinity";
+
+      const TIMESTAMP_PREFIX = "TIMESTAMP_PREFIX";
+
+      const getObjectType = (obj) =>
+        Object.prototype.toString.call(obj).match(/\[object (.*)\]/)[1];
+      /**
+       * 增强web storage
+       * 支持存储Symbol、Date
+       *
+       */
+      function genStorageEnhance(storage) {
+        /**
+         * {
+         *    [temporaryId] : Symbol()
+         * }
+         */
+        mapTemporaryIdToSymbol = {};
+
+        const genTemporaryId = () =>
+          SYMOBOL_PRFIX +
+          Number(Math.random().toString().substr(3, 3) + Date.now()).toString(
+            36
+          );
+
+        const gentemporaryTimestamp = (date) => `${TIMESTAMP_PREFIX}_${+data}`;
+
+        const getDateByTemporaryTimestamp = (str) => str.split("_")[1];
+
+        const getItem = (cacheKey) => {
+          const cacheValue = storage.getItem(cacheKey);
+          return JSON.parse(cacheValue, (key, value) => {
+            if (typeof value === "string") {
+              if (value === INIFINITY) return Infinity;
+              if (value.includes(TIMESTAMP_PREFIX)) {
+                return getDateByTemporaryTimestamp(value);
+              }
+              if (value.includes(SYMOBOL_PRFIX)) {
+                return mapTemporaryIdToSymbol[value];
+              }
+            }
+            return value;
+          });
+        };
+
+        const setItem = (cacheKey, cacheValue) => {
+          storage.setItem(
+            cacheKey,
+            JSON.stringify(cacheValue, (key, value) => {
+              if (value === Infinity) {
+                return INIFINITY;
+              }
+
+              console.log(key, getObjectType(value));
+
+              switch (getObjectType(value)) {
+                case "Date":
+                  return gentemporaryTimestamp(value);
+              }
+
+              if (typeof value === "symbol") {
+                const symbolId = value;
+
+                for (let id in mapTemporaryIdToSymbol) {
+                  if (mapTemporaryIdToSymbol[id] === symbolId) {
+                    return id;
+                  }
+                }
+
+                const temporaryId = genTemporaryId();
+                Object.assign(mapTemporaryIdToSymbol, {
+                  [temporaryId]: symbolId,
+                });
+                return temporaryId;
+              }
+
+              return value;
+            })
+          );
+        };
+
+        return {
+          getItem,
+          setItem,
+        };
+      }
+
+      const storage = genStorageEnhance(window.localStorage);
+
+      const id = Symbol();
+      const list = [
+        {
+          id,
+          name: "123",
+        },
+      ];
+
+      const relList = [
+        {
+          rel_id: id,
+          name: Infinity,
+        },
+      ];
+      const otherlList = [
+        {
+          rel_id: Symbol(),
+          name: "rel name",
+          time: new Date(),
+        },
+      ];
+
+      storage.setItem("123", {
+        list,
+        relList,
+        otherlList,
+      });
+
+      setTimeout(() => {
+        const a = storage.getItem("123");
+        console.log(a);
+        console.log(a.list[0].id === a.relList[0].rel_id);
+      }, 1000);
+    </script>
+  </body>
+</html>
